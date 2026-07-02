@@ -164,9 +164,14 @@ The built-in rules cover English and Chinese patterns, including formulaic
 transitions, empty intensifier density, generic benefit claims, evidence-free
 importance claims, vague scale terms, and templated conclusions.
 
+## Release quality
+
+CI runs formatting, Clippy, and tests on pushes and pull requests. Tagged
+releases build the install-script assets with GitHub Actions and publish
+`SHA256SUMS` alongside the archives.
+
 ## Roadmap
 
-- GitHub Actions release pipeline for the install script assets.
 - External rule packs for academic writing, technical docs, social posts, and brand voice.
 - Diff-only mode for PostToolUse hooks.
 - SARIF output for editor and CI integrations.

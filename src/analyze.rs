@@ -181,9 +181,29 @@ fn find_phrases(text: &str, phrases: &[String]) -> Vec<String> {
 }
 
 fn count_words(text: &str) -> usize {
-    text.split_whitespace()
-        .filter(|part| part.chars().any(char::is_alphanumeric))
-        .count()
+    let whitespace_words = text
+        .split_whitespace()
+        .filter(|part| part.chars().any(|ch| ch.is_alphanumeric() && !is_cjk(ch)))
+        .count();
+    let cjk_chars = text.chars().filter(|ch| is_cjk(*ch)).count();
+    whitespace_words + cjk_chars
+}
+
+fn is_cjk(ch: char) -> bool {
+    matches!(
+        ch as u32,
+        0x3400..=0x4DBF
+            | 0x4E00..=0x9FFF
+            | 0xF900..=0xFAFF
+            | 0x3040..=0x30FF
+            | 0xAC00..=0xD7AF
+            | 0x20000..=0x2A6DF
+            | 0x2A700..=0x2B73F
+            | 0x2B740..=0x2B81F
+            | 0x2B820..=0x2CEAF
+            | 0x2CEB0..=0x2EBEF
+            | 0x30000..=0x3134F
+    )
 }
 
 fn markdown_plain_ranges(text: &str) -> Vec<(usize, usize)> {
@@ -298,6 +318,31 @@ mod tests {
             diagnostics
                 .iter()
                 .any(|diagnostic| diagnostic.rule_id == "slop.zh-formulaic-transition")
+        );
+    }
+
+    #[test]
+    fn counts_cjk_characters_for_density_units() {
+        assert_eq!(count_words("全面强大高效创新"), 8);
+        assert_eq!(count_words("robust 工具"), 3);
+    }
+
+    #[test]
+    fn cjk_density_uses_character_units_not_single_word_fallback() {
+        let long_specific_text = format!(
+            "{}全面强大高效创新",
+            "这个段落描述具体机制和边界条件".repeat(40)
+        );
+        let diagnostics = analyze_text(
+            Path::new("demo.md"),
+            &long_specific_text,
+            &Config::default(),
+            &builtin_rules().unwrap(),
+        );
+        assert!(
+            !diagnostics
+                .iter()
+                .any(|diagnostic| diagnostic.rule_id == "slop.zh-empty-intensifier-density")
         );
     }
 }

@@ -486,7 +486,7 @@ fn hook_path(agent: HookAgent, scope: HookScope) -> Result<(&'static str, PathBu
 fn extract_files(input: &Value, cwd: &Path, config: &Config) -> Vec<PathBuf> {
     let mut files = Vec::new();
     collect_paths(input, &mut files);
-    files
+    let mut files = files
         .into_iter()
         .map(|path| {
             if path.is_absolute() {
@@ -496,17 +496,20 @@ fn extract_files(input: &Value, cwd: &Path, config: &Config) -> Vec<PathBuf> {
             }
         })
         .filter(|path| path.is_file() && should_check_hook_path(path, config))
-        .collect()
+        .collect::<Vec<_>>();
+    files.sort();
+    files.dedup();
+    files
 }
 
 fn collect_paths(value: &Value, files: &mut Vec<PathBuf>) {
     match value {
         Value::Object(map) => {
             for (key, value) in map {
-                if is_path_key(key) {
-                    if let Some(path) = value.as_str() {
-                        files.push(PathBuf::from(path));
-                    }
+                if is_path_key(key)
+                    && let Some(path) = value.as_str()
+                {
+                    files.push(PathBuf::from(path));
                 }
                 collect_paths(value, files);
             }
@@ -563,9 +566,8 @@ fn format_hook_feedback(diagnostics: &[crate::analyze::Diagnostic]) -> String {
 }
 
 fn print_hook_ok(agent: Agent) -> Result<()> {
-    match agent {
-        Agent::GeminiCli => println!("{}", json!({ "suppressOutput": true })),
-        _ => {}
+    if agent == Agent::GeminiCli {
+        println!("{}", json!({ "suppressOutput": true }));
     }
     Ok(())
 }
@@ -673,4 +675,57 @@ fn command_exists(command: &str) -> bool {
         return false;
     };
     env::split_paths(&path).any(|dir| dir.join(command).is_file())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+
+    use serde_json::json;
+    use tempfile::tempdir;
+
+    use super::*;
+
+    #[test]
+    fn extracts_supported_paths_from_nested_hook_events() {
+        let dir = tempdir().unwrap();
+        let docs = dir.path().join("docs");
+        fs::create_dir(&docs).unwrap();
+        fs::write(docs.join("note.md"), "It is important to note this.").unwrap();
+        fs::write(docs.join("skip.rs"), "fn main() {}").unwrap();
+
+        let event = json!({
+            "cwd": dir.path(),
+            "tool_input": {
+                "file_path": "docs/note.md",
+                "edits": [
+                    { "path": docs.join("note.md") },
+                    { "target_file": "docs/skip.rs" }
+                ]
+            }
+        });
+
+        let files = extract_files(&event, dir.path(), &Config::default());
+
+        assert_eq!(files, vec![docs.join("note.md")]);
+    }
+
+    #[test]
+    fn ignores_missing_and_unsupported_hook_paths() {
+        let dir = tempdir().unwrap();
+        fs::write(dir.path().join("notes.md"), "plain").unwrap();
+        fs::write(dir.path().join("code.rs"), "fn main() {}").unwrap();
+
+        let event = json!({
+            "tool_input": {
+                "file_path": "missing.md",
+                "path": "code.rs",
+                "absolutePath": dir.path().join("notes.md")
+            }
+        });
+
+        let files = extract_files(&event, dir.path(), &Config::default());
+
+        assert_eq!(files, vec![dir.path().join("notes.md")]);
+    }
 }

@@ -21,25 +21,28 @@ pub struct Config {
     pub custom_rules: Vec<Rule>,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Sensitivity {
     Low,
     Normal,
+    #[default]
     High,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Mode {
     Batch,
+    #[default]
     Interactive,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum DiagnosticAction {
     Warn,
+    #[default]
     AskUser,
     Off,
 }
@@ -80,24 +83,6 @@ impl Default for Config {
             mute: MuteConfig::default(),
             custom_rules: Vec::new(),
         }
-    }
-}
-
-impl Default for Sensitivity {
-    fn default() -> Self {
-        Self::High
-    }
-}
-
-impl Default for Mode {
-    fn default() -> Self {
-        Self::Interactive
-    }
-}
-
-impl Default for DiagnosticAction {
-    fn default() -> Self {
-        Self::AskUser
     }
 }
 

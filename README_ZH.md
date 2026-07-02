@@ -157,9 +157,13 @@ confidence = 0.7
 内置规则已经覆盖中英文模式，包括模板化提示语、空泛修饰词密度、泛化价值表达、
 无证据重要性判断、模糊规模表达和模板化总结。
 
+## 发布质量
+
+CI 会在 push 和 pull request 上运行格式检查、Clippy 和测试。带 tag 的 release 会
+通过 GitHub Actions 构建安装脚本所需资产，并随归档文件发布 `SHA256SUMS`。
+
 ## 路线图
 
-- 用 GitHub Actions 生成安装脚本需要的 release 资产。
 - 针对学术写作、技术文档、社交媒体、品牌语气的外部规则包。
 - 面向 PostToolUse Hook 的 diff-only 模式。
 - SARIF 输出，用于编辑器和 CI 集成。
