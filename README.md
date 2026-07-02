@@ -1,5 +1,9 @@
 # slop-lint
 
+<p align="center">
+  <img src="docs/public/favicon.svg" alt="slop-lint logo" width="96" height="96">
+</p>
+
 Agent-facing lint for AI-generated text.
 
 Website: <https://indenscale.github.io/slop-lint/>

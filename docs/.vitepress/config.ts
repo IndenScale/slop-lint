@@ -50,6 +50,8 @@ export default defineConfig({
     }
   },
   head: [
+    ['link', { rel: 'icon', href: '/slop-lint/favicon.svg', type: 'image/svg+xml' }],
+    ['link', { rel: 'shortcut icon', href: '/slop-lint/favicon.svg', type: 'image/svg+xml' }],
     ['meta', { name: 'theme-color', content: '#101820' }],
     ['meta', { property: 'og:title', content: 'slop-lint' }],
     [
@@ -62,7 +64,7 @@ export default defineConfig({
   ],
   themeConfig: {
     i18nRouting: true,
-    logo: { text: 'sl' },
+    logo: { src: '/favicon.svg', alt: 'slop-lint' },
     nav: [
       { text: 'Install', link: '/installation' },
       { text: 'Rules', link: '/rules' },

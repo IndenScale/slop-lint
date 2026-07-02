@@ -1,5 +1,9 @@
 # slop-lint
 
+<p align="center">
+  <img src="docs/public/favicon.svg" alt="slop-lint logo" width="96" height="96">
+</p>
+
 面向 Agent 的 AI 文本产物质量 Linter。
 
 网站：<https://indenscale.github.io/slop-lint/>
