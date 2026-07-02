@@ -1,9 +1,12 @@
 import { defineConfig } from 'vitepress'
 
+const base = '/slop-lint/'
+const faviconHref = `${base}favicon.svg?v=20260702`
+
 export default defineConfig({
   title: 'slop-lint',
   description: 'Deterministic lint for agent-written text.',
-  base: '/slop-lint/',
+  base,
   cleanUrls: true,
   locales: {
     root: {
@@ -50,8 +53,8 @@ export default defineConfig({
     }
   },
   head: [
-    ['link', { rel: 'icon', href: '/slop-lint/favicon.svg', type: 'image/svg+xml' }],
-    ['link', { rel: 'shortcut icon', href: '/slop-lint/favicon.svg', type: 'image/svg+xml' }],
+    ['link', { rel: 'icon', href: faviconHref, type: 'image/svg+xml' }],
+    ['link', { rel: 'shortcut icon', href: faviconHref, type: 'image/svg+xml' }],
     ['meta', { name: 'theme-color', content: '#101820' }],
     ['meta', { property: 'og:title', content: 'slop-lint' }],
     [
