@@ -2,6 +2,19 @@
 
 All notable changes to `slop-lint` will be documented in this file.
 
+## Unreleased
+
+- Added `phrase_pair_density` rules for locally dense paired constructions.
+- Added the built-in Chinese `slop.zh-not-but-density` rule for repeated
+  `不是...而是...` contrast patterns.
+- Added install smoke testing for GitHub Release install scripts and
+  crates.io-based `cargo install`.
+- Added a VitePress documentation and landing site with GitHub Pages deployment.
+- Added English and Simplified Chinese landing pages, localized docs, and a
+  VitePress language switcher.
+- Improved the custom dark-mode palette for the landing page.
+- Added rule-contribution links to the landing page footer and README files.
+
 ## 0.1.0 - 2026-07-02
 
 Initial public release.

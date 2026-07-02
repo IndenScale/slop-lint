@@ -2,6 +2,8 @@
 
 Agent-facing lint for AI-generated text.
 
+Website: <https://indenscale.github.io/slop-lint/>
+
 `slop-lint` checks Markdown and plain text after an agent writes files. It does
 not try to prove whether text is AI-written. It flags patterns that make text
 feel vague, templated, inflated, or hard to trust.
@@ -10,13 +12,15 @@ Think of it as `markdownlint` for AI slop.
 
 ## Quick start
 
-Install one binary on macOS/Linux:
+Choose one install method.
+
+macOS/Linux release binary:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/IndenScale/slop-lint/main/install.sh | sh
 ```
 
-Install one binary on Windows PowerShell:
+Windows PowerShell release binary:
 
 ```powershell
 iwr https://raw.githubusercontent.com/IndenScale/slop-lint/main/install.ps1 -useb | iex
@@ -28,14 +32,15 @@ Or install from crates.io:
 cargo install slop-lint
 ```
 
-Attach it to your agent hooks:
+Then attach the installed binary to your agent hooks:
 
 ```sh
 slop-lint install-hooks
 ```
 
-That is the intended happy path. `slop-lint install-hooks` auto-detects supported
-agents and writes the hook configuration it can safely manage.
+That is the intended happy path: install once, then run `slop-lint install-hooks`.
+The hook installer auto-detects supported agents and writes the hook
+configuration it can safely manage.
 
 Supported targets:
 
@@ -111,6 +116,14 @@ slop-lint check docs/ --format sarif
 
 Use SARIF when wiring `slop-lint` into CI, code scanning, or editor diagnostics.
 
+## Development checks
+
+Run the full local check suite from anywhere inside the repository:
+
+```sh
+scripts/check-all.sh
+```
+
 ## Product stance
 
 - Sensitive by default. It is cheaper for an agent to revise a warning than for
@@ -176,6 +189,18 @@ This phrase is intentional. <!-- slop-lint-disable-line -->
 Prefer project-level `[mute].rules` when a whole project wants a style, and
 inline disables when a single line or file has a local exception.
 
+## Contribute Rules
+
+Rule quality depends on real false positives, missed slop, and project-specific
+writing habits. If you have a recurring pattern, open a GitHub issue with:
+
+- the text that should be flagged
+- the text that should not be flagged
+- the rule action you expect: `warn` or `ask_user`
+
+Project homepage: <https://indenscale.github.io/slop-lint/>
+Author homepage: <https://indenscale.github.io/>
+
 ## Rule model
 
 Rules are data-driven TOML, including the built-in rules. The Rust binary keeps
@@ -186,6 +211,8 @@ The first rule engine supports:
 
 - `phrase_presence`: warn when a unit contains configured phrases.
 - `phrase_density`: warn when phrase density crosses a threshold.
+- `phrase_pair_density`: warn when a paired construction is locally dense, such
+  as repeated `不是...而是...` contrasts in one paragraph.
 
 The analyzer segments text at document and paragraph levels, and skips Markdown
 fenced and indented code blocks. Sentence-level and punctuation-window checks can
@@ -209,6 +236,11 @@ tag, GitHub Release, and crates.io release flow.
 
 ## Roadmap
 
+- Calibrate paired-construction density rules on real Chinese and English
+  agent-written documents.
+- Add fixture-based hook compatibility tests for Claude Code, Codex, Gemini CLI,
+  OpenCode, and Kimi Code event payloads.
+- Add release smoke checks for install scripts and `cargo install`.
 - External rule packs for academic writing, technical docs, social posts, and brand voice.
 - Diff-only mode for PostToolUse hooks.
 - Data-only plugin packages first, WASM plugins later if rule logic needs code.

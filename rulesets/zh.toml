@@ -41,6 +41,19 @@ suggestion = "保留有证据支撑的修饰词，并补充指标、机制或例
 confidence = 0.72
 
 [[rules]]
+id = "slop.zh-not-but-density"
+name = "中文“不是……而是……”结构密度过高"
+level = "warning"
+kind = "phrase_pair_density"
+first_phrases = ["不是"]
+second_phrases = ["而是"]
+threshold_per_1000_words = 24.0
+min_occurrences = 3
+message = "“不是……而是……”结构在局部文本中过于密集，容易形成模板化对照。"
+suggestion = "保留真正有辨析价值的一处对照，其余改成直接判断、证据或边界条件。"
+confidence = 0.74
+
+[[rules]]
 id = "slop.zh-generic-value"
 name = "中文泛化价值表达"
 level = "warning"

@@ -10,7 +10,12 @@ pub struct Rule {
     pub name: String,
     pub level: Level,
     pub kind: RuleKind,
+    #[serde(default)]
     pub phrases: Vec<String>,
+    #[serde(default)]
+    pub first_phrases: Vec<String>,
+    #[serde(default)]
+    pub second_phrases: Vec<String>,
     #[serde(default)]
     pub threshold_per_1000_words: Option<f32>,
     #[serde(default)]
@@ -51,8 +56,12 @@ impl std::fmt::Display for Level {
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RuleKind {
-    PhrasePresence,
-    PhraseDensity,
+    #[serde(rename = "phrase_presence")]
+    Presence,
+    #[serde(rename = "phrase_density")]
+    Density,
+    #[serde(rename = "phrase_pair_density")]
+    PairDensity,
 }
 
 impl Default for Ruleset {

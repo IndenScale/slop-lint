@@ -18,6 +18,13 @@ cargo package
 cargo publish --dry-run
 ```
 
+- Passing install smoke test after a GitHub Release and crates.io package are
+  available:
+
+```sh
+scripts/smoke-install.sh
+```
+
 - A configured crates.io token stored as the GitHub Actions secret
   `CARGO_REGISTRY_TOKEN` if the crate should be published by CI.
 

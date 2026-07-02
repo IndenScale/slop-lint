@@ -59,7 +59,7 @@ pub fn analyze_text(path: &Path, text: &str, config: &Config, rules: &[Rule]) ->
     let disable_directives = DisableDirectives::parse(text);
     for rule in rules {
         match rule.kind {
-            RuleKind::PhrasePresence => {
+            RuleKind::Presence => {
                 for unit in &units {
                     if unit.scope == UnitScope::Document {
                         continue;
@@ -74,7 +74,7 @@ pub fn analyze_text(path: &Path, text: &str, config: &Config, rules: &[Rule]) ->
                     }
                 }
             }
-            RuleKind::PhraseDensity => {
+            RuleKind::Density => {
                 for unit in &units {
                     if unit.word_count == 0 {
                         continue;
@@ -85,6 +85,28 @@ pub fn analyze_text(path: &Path, text: &str, config: &Config, rules: &[Rule]) ->
                         * config.threshold_multiplier();
                     let min_occurrences = rule.min_occurrences.unwrap_or(1);
                     if matches.len() >= min_occurrences && density >= threshold {
+                        let diagnostic =
+                            to_diagnostic(path, text, unit.offset, rule, &matches, config);
+                        if !disable_directives.is_disabled(&diagnostic.rule_id, diagnostic.line) {
+                            diagnostics.push(diagnostic);
+                        }
+                    }
+                }
+            }
+            RuleKind::PairDensity => {
+                for unit in &units {
+                    if unit.word_count == 0 {
+                        continue;
+                    }
+                    let first_matches = find_phrases(unit.text, &rule.first_phrases);
+                    let second_matches = find_phrases(unit.text, &rule.second_phrases);
+                    let pair_count = first_matches.len().min(second_matches.len());
+                    let density = pair_count as f32 * 1000.0 / unit.word_count as f32;
+                    let threshold = rule.threshold_per_1000_words.unwrap_or(0.0)
+                        * config.threshold_multiplier();
+                    let min_occurrences = rule.min_occurrences.unwrap_or(1);
+                    if pair_count >= min_occurrences && density >= threshold {
+                        let matches = paired_matches(&first_matches, &second_matches, pair_count);
                         let diagnostic =
                             to_diagnostic(path, text, unit.offset, rule, &matches, config);
                         if !disable_directives.is_disabled(&diagnostic.rule_id, diagnostic.line) {
@@ -271,6 +293,19 @@ fn find_phrases(text: &str, phrases: &[String]) -> Vec<PhraseMatch> {
         }
     }
     matches
+}
+
+fn paired_matches(
+    first_matches: &[PhraseMatch],
+    second_matches: &[PhraseMatch],
+    pair_count: usize,
+) -> Vec<PhraseMatch> {
+    first_matches
+        .iter()
+        .take(pair_count)
+        .chain(second_matches.iter().take(pair_count))
+        .cloned()
+        .collect()
 }
 
 fn count_words(text: &str) -> usize {
@@ -497,6 +532,60 @@ mod tests {
             !diagnostics
                 .iter()
                 .any(|diagnostic| diagnostic.rule_id == "slop.zh-empty-intensifier-density")
+        );
+    }
+
+    #[test]
+    fn flags_dense_cjk_not_but_pairs_in_one_paragraph() {
+        let diagnostics = analyze_text(
+            Path::new("demo.md"),
+            "这不是简单工具，而是工作流；不是替代人工，而是减少模板；不是给出结论，而是暴露证据。",
+            &Config::default(),
+            &builtin_rules().unwrap(),
+        );
+
+        assert!(
+            diagnostics
+                .iter()
+                .any(|diagnostic| diagnostic.rule_id == "slop.zh-not-but-density")
+        );
+    }
+
+    #[test]
+    fn allows_sparse_cjk_not_but_pairs_in_long_document() {
+        let mut text = String::new();
+        for index in 0..5 {
+            text.push_str(&"这段文字描述具体机制、限制条件、样本范围和执行步骤。".repeat(120));
+            text.push_str(&format!("这不是第{index}个口号，而是一个具体边界。\n\n"));
+        }
+
+        let diagnostics = analyze_text(
+            Path::new("demo.md"),
+            &text,
+            &Config::default(),
+            &builtin_rules().unwrap(),
+        );
+
+        assert!(
+            !diagnostics
+                .iter()
+                .any(|diagnostic| diagnostic.rule_id == "slop.zh-not-but-density")
+        );
+    }
+
+    #[test]
+    fn allows_single_cjk_not_but_pair() {
+        let diagnostics = analyze_text(
+            Path::new("demo.md"),
+            "这不是简单工具，而是工作流。",
+            &Config::default(),
+            &builtin_rules().unwrap(),
+        );
+
+        assert!(
+            !diagnostics
+                .iter()
+                .any(|diagnostic| diagnostic.rule_id == "slop.zh-not-but-density")
         );
     }
 }

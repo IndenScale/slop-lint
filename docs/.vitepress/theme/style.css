@@ -1,0 +1,345 @@
+:root {
+  --vp-c-brand-1: #0f766e;
+  --vp-c-brand-2: #0d9488;
+  --vp-c-brand-3: #14b8a6;
+  --vp-c-text-1: #101820;
+  --vp-c-text-2: #39434f;
+  --vp-c-bg: #fbfaf7;
+  --vp-c-bg-alt: #f2f0ea;
+  --vp-c-bg-soft: #f6f4ef;
+  --vp-c-border: #ded8cc;
+  --sl-ink: #101820;
+  --sl-paper: #fbfaf7;
+  --sl-muted: #59636f;
+  --sl-rule: #d8d0c1;
+  --sl-band: #f4f1e9;
+  --sl-teal: #0f766e;
+  --sl-amber: #c87911;
+  --sl-code: #0f1720;
+  --sl-code-line: #203040;
+  --sl-code-text: #e8edf2;
+  --sl-terminal-border: #223446;
+  --sl-shadow: #d7cdbb;
+  --vp-font-family-base: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --vp-font-family-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+.dark {
+  --vp-c-text-1: #edf4f8;
+  --vp-c-text-2: #b8c5ce;
+  --vp-c-bg: #101820;
+  --vp-c-bg-alt: #0c151d;
+  --vp-c-bg-soft: #152330;
+  --vp-c-border: #2b4050;
+  --sl-ink: #edf4f8;
+  --sl-paper: #14212b;
+  --sl-muted: #aebbc6;
+  --sl-rule: #2b4050;
+  --sl-band: #0d161e;
+  --sl-teal: #5eead4;
+  --sl-amber: #f5b84b;
+  --sl-code: #080f16;
+  --sl-code-line: #263949;
+  --sl-code-text: #edf4f8;
+  --sl-terminal-border: #2b4050;
+  --sl-shadow: #2d3e4b;
+  color-scheme: dark;
+}
+
+.VPNavBarTitle .title {
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.VPContent.is-home {
+  padding-top: 0;
+}
+
+.sl-landing {
+  overflow-x: hidden;
+}
+
+.sl-hero {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 72px 24px 40px;
+}
+
+.sl-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(360px, 1.05fr);
+  gap: 44px;
+  align-items: center;
+}
+
+.sl-kicker {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 22px;
+  font-family: var(--vp-font-family-mono);
+  font-size: 13px;
+  color: var(--sl-teal);
+}
+
+.sl-kicker::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  background: var(--sl-teal);
+}
+
+.sl-hero h1 {
+  max-width: 780px;
+  margin: 0;
+  color: var(--sl-ink);
+  font-size: clamp(46px, 6.5vw, 88px);
+  line-height: 0.93;
+  letter-spacing: 0;
+  text-wrap: balance;
+}
+
+.sl-locale-zh .sl-hero-grid {
+  grid-template-columns: minmax(0, 0.9fr) minmax(420px, 1.1fr);
+}
+
+.sl-locale-zh .sl-hero h1 {
+  max-width: 700px;
+  font-size: clamp(42px, 4.8vw, 72px);
+  line-height: 1.08;
+}
+
+.sl-locale-zh .sl-subtitle {
+  font-size: 19px;
+  line-height: 1.75;
+}
+
+.sl-subtitle {
+  max-width: 680px;
+  margin: 24px 0 0;
+  color: var(--sl-muted);
+  font-size: 20px;
+  line-height: 1.55;
+}
+
+.sl-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.sl-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--sl-ink);
+  border-radius: 6px;
+  color: var(--sl-ink);
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.sl-button.primary {
+  background: var(--sl-ink);
+  color: var(--sl-paper);
+}
+
+.sl-button:hover {
+  border-color: var(--sl-teal);
+  color: var(--sl-teal);
+}
+
+.sl-button.primary:hover {
+  background: var(--sl-teal);
+  color: #081116;
+}
+
+.sl-terminal {
+  border: 1px solid var(--sl-terminal-border);
+  background: var(--sl-code);
+  color: var(--sl-code-text);
+  box-shadow: 14px 14px 0 var(--sl-shadow);
+}
+
+.sl-terminal-bar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #243648;
+  color: #9fb1c2;
+  font-family: var(--vp-font-family-mono);
+  font-size: 12px;
+}
+
+.sl-terminal-output {
+  padding: 20px;
+  overflow-x: auto;
+  font-family: var(--vp-font-family-mono);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.sl-indent {
+  padding-left: 18px;
+}
+
+.sl-gap {
+  margin-top: 18px;
+}
+
+.sl-hit {
+  color: #f5b84b;
+}
+
+.sl-ok {
+  color: #5eead4;
+}
+
+.sl-section {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 42px 24px;
+}
+
+.sl-band {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.sl-rule-grid,
+.sl-hook-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.sl-rule-card,
+.sl-hook-card {
+  min-height: 170px;
+  padding: 20px;
+  border: 1px solid var(--sl-rule);
+  border-radius: 8px;
+  background: var(--sl-paper);
+}
+
+.sl-rule-card h2,
+.sl-hook-card h2 {
+  margin: 0 0 14px;
+  font-size: 18px;
+}
+
+.sl-rule-card p,
+.sl-hook-card p {
+  margin: 0;
+  color: var(--sl-muted);
+  line-height: 1.6;
+}
+
+.sl-rule-id {
+  display: block;
+  margin-top: 16px;
+  color: var(--sl-amber);
+  font-family: var(--vp-font-family-mono);
+  font-size: 12px;
+}
+
+.sl-install {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 32px;
+  align-items: start;
+  padding: 42px 24px;
+  border-top: 1px solid var(--sl-rule);
+  border-bottom: 1px solid var(--sl-rule);
+  background: var(--sl-band);
+}
+
+.sl-install h2 {
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.12;
+  text-wrap: balance;
+}
+
+.sl-locale-zh .sl-install {
+  grid-template-columns: 260px minmax(0, 1fr);
+}
+
+.sl-locale-zh .sl-install h2 {
+  font-size: 30px;
+  line-height: 1.18;
+}
+
+.sl-install p {
+  color: var(--sl-muted);
+}
+
+.sl-install-commands {
+  min-width: 0;
+}
+
+.sl-step-label,
+.sl-or {
+  margin: 0 0 8px;
+  color: var(--sl-muted);
+  font-family: var(--vp-font-family-mono);
+  font-size: 12px;
+}
+
+.sl-or {
+  margin: -2px 0 10px;
+  color: var(--sl-amber);
+}
+
+.sl-install pre {
+  margin: 0 0 12px;
+  padding: 16px;
+  overflow-x: auto;
+  border-radius: 8px;
+  background: var(--sl-code);
+  color: var(--sl-code-text);
+}
+
+.VPFooter a {
+  color: var(--sl-teal);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.VPFooter a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 860px) {
+  .sl-hero {
+    padding-top: 48px;
+  }
+
+  .sl-hero-grid,
+  .sl-install {
+    grid-template-columns: 1fr;
+  }
+
+  .sl-locale-zh .sl-hero-grid,
+  .sl-locale-zh .sl-install {
+    grid-template-columns: 1fr;
+  }
+
+  .sl-locale-zh .sl-hero h1 {
+    font-size: clamp(38px, 11vw, 56px);
+  }
+
+  .sl-terminal {
+    box-shadow: 8px 8px 0 var(--sl-shadow);
+  }
+
+  .sl-rule-grid,
+  .sl-hook-grid {
+    grid-template-columns: 1fr;
+  }
+
+}
