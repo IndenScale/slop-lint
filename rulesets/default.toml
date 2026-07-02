@@ -1,0 +1,165 @@
+name = "default"
+
+[[rules]]
+id = "slop.overconfident-transition"
+name = "Overconfident transition phrase"
+level = "warning"
+kind = "phrase_presence"
+phrases = [
+  "it is important to note",
+  "it is worth noting",
+  "in today's fast-paced",
+  "in the ever-evolving",
+  "at the end of the day",
+]
+min_occurrences = 1
+message = "This transition often reads like AI filler unless it introduces specific evidence."
+suggestion = "Remove the transition or replace it with the concrete claim it was trying to frame."
+confidence = 0.85
+
+[[rules]]
+id = "slop.empty-intensifier-density"
+name = "High density of empty intensifiers"
+level = "warning"
+kind = "phrase_density"
+phrases = [
+  "significantly",
+  "robust",
+  "seamless",
+  "comprehensive",
+  "powerful",
+  "efficient",
+  "innovative",
+  "transformative",
+]
+threshold_per_1000_words = 12.0
+min_occurrences = 3
+message = "Empty intensifiers are dense in this unit and may be masking missing evidence."
+suggestion = "Keep only modifiers backed by measurements, constraints, examples, or concrete mechanisms."
+confidence = 0.72
+
+[[rules]]
+id = "slop.not-merely-but"
+name = "Not merely X but Y construction"
+level = "info"
+kind = "phrase_presence"
+phrases = ["not merely", "not just", "but also"]
+min_occurrences = 2
+message = "Repeated contrastive framing can make prose feel templated."
+suggestion = "Use direct claims when the contrast does not add real argumentative structure."
+confidence = 0.64
+
+[[rules]]
+id = "slop.generic-conclusion"
+name = "Generic conclusion marker"
+level = "warning"
+kind = "phrase_presence"
+phrases = ["in conclusion", "to summarize", "overall,", "ultimately,"]
+min_occurrences = 1
+message = "Generic conclusion markers often add ceremony without adding synthesis."
+suggestion = "Start the closing sentence with the actual result, decision, or implication."
+confidence = 0.76
+
+[[rules]]
+id = "slop.generic-benefit-claim"
+name = "Generic benefit claim"
+level = "warning"
+kind = "phrase_presence"
+phrases = [
+  "unlock new opportunities",
+  "drive meaningful impact",
+  "enhance productivity",
+  "streamline workflows",
+  "empower users",
+  "deliver value",
+]
+min_occurrences = 1
+message = "This benefit claim is generic unless it is tied to a concrete actor, constraint, or measurable outcome."
+suggestion = "Replace the generic benefit with a specific before/after, metric, or user-visible effect."
+confidence = 0.73
+
+[[rules]]
+id = "slop.empty-metaphor"
+name = "Empty product metaphor"
+level = "info"
+kind = "phrase_presence"
+phrases = ["game-changer", "silver bullet", "magic bullet", "paradigm shift", "north star"]
+min_occurrences = 1
+message = "This metaphor can sound promotional unless the text explains the mechanism behind it."
+suggestion = "Use the concrete mechanism or consequence instead of the metaphor."
+confidence = 0.67
+
+[[rules]]
+id = "slop.disclaimer-cushion"
+name = "Cushioned disclaimer"
+level = "info"
+kind = "phrase_presence"
+phrases = [
+  "while it may seem",
+  "this is not to say",
+  "that being said",
+  "it depends on the context",
+  "there is no one-size-fits-all",
+]
+min_occurrences = 1
+message = "Cushioned disclaimers often dilute the claim instead of sharpening scope."
+suggestion = "State the actual boundary condition directly."
+confidence = 0.66
+
+[[rules]]
+id = "slop.excessive-certainty"
+name = "Unbacked certainty language"
+level = "warning"
+kind = "phrase_density"
+phrases = ["clearly", "undoubtedly", "obviously", "without a doubt", "always", "never"]
+threshold_per_1000_words = 8.0
+min_occurrences = 2
+message = "Certainty language is dense and may overstate evidence."
+suggestion = "Qualify the claim or add the evidence that supports this certainty."
+confidence = 0.74
+
+[[rules]]
+id = "slop.vague-scale"
+name = "Vague scale or magnitude"
+level = "warning"
+kind = "phrase_density"
+phrases = ["at scale", "large-scale", "massive", "many", "various", "multiple"]
+threshold_per_1000_words = 10.0
+min_occurrences = 3
+message = "Vague scale terms are dense without enough quantification."
+suggestion = "Add the actual count, range, population, or operating condition."
+confidence = 0.7
+
+[[rules]]
+id = "slop.evidence-free-importance"
+name = "Evidence-free importance claim"
+level = "warning"
+kind = "phrase_presence"
+phrases = [
+  "plays a crucial role",
+  "is critical for",
+  "is essential for",
+  "is vital for",
+  "is key to",
+]
+min_occurrences = 1
+message = "Importance claims need evidence, stakes, or a failure mode nearby."
+suggestion = "Explain what breaks without it, or cite a concrete dependency."
+confidence = 0.78
+
+[[rules]]
+id = "slop.templated-opening"
+name = "Templated opening"
+level = "info"
+kind = "phrase_presence"
+phrases = [
+  "in the realm of",
+  "when it comes to",
+  "as we navigate",
+  "in an era where",
+  "with the rise of",
+]
+min_occurrences = 1
+message = "This opening phrase can make the paragraph feel generated."
+suggestion = "Start with the specific object, actor, or claim."
+confidence = 0.69

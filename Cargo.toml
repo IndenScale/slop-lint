@@ -1,0 +1,18 @@
+[package]
+name = "slop-lint"
+version = "0.1.0"
+edition = "2024"
+description = "Agent-facing linter for AI slop patterns in Markdown and text artifacts."
+license = "MIT"
+
+[dependencies]
+anyhow = "1.0.100"
+clap = { version = "4.5.51", features = ["derive"] }
+regex = "1.12.2"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+toml = "0.9.8"
+walkdir = "2.5.0"
+
+[dev-dependencies]
+tempfile = "3.23.0"

@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "slop-lint hook --agent codex",
+            "timeout": 30,
+            "statusMessage": "Checking text slop"
+          }
+        ]
+      }
+    ]
+  }
+}

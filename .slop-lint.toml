@@ -1,0 +1,9 @@
+sensitivity = "high"
+mode = "interactive"
+uncertain_action = "ask_user"
+file_extensions = ["md", "mdx", "txt", "rst", "adoc"]
+extends = ["default", "zh"]
+ruleset_paths = []
+
+[mute]
+rules = []

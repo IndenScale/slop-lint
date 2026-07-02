@@ -1,0 +1,83 @@
+name = "zh"
+
+[[rules]]
+id = "slop.zh-formulaic-transition"
+name = "中文模板化转折或提示"
+level = "warning"
+kind = "phrase_presence"
+phrases = [
+  "值得注意的是",
+  "需要注意的是",
+  "不可否认的是",
+  "众所周知",
+  "在当今快速发展的",
+  "随着时代的发展",
+]
+min_occurrences = 1
+message = "这个提示语常见于模板化 AI 文本，除非后面紧接具体证据。"
+suggestion = "删掉提示语，直接写具体判断、证据或限制条件。"
+confidence = 0.82
+
+[[rules]]
+id = "slop.zh-empty-intensifier-density"
+name = "中文空泛修饰词密度过高"
+level = "warning"
+kind = "phrase_density"
+phrases = [
+  "全面",
+  "强大",
+  "高效",
+  "创新",
+  "智能",
+  "无缝",
+  "显著",
+  "深度",
+  "赋能",
+]
+threshold_per_1000_words = 18.0
+min_occurrences = 4
+message = "空泛修饰词密度偏高，可能在掩盖缺少机制或证据的问题。"
+suggestion = "保留有证据支撑的修饰词，并补充指标、机制或例子。"
+confidence = 0.72
+
+[[rules]]
+id = "slop.zh-generic-value"
+name = "中文泛化价值表达"
+level = "warning"
+kind = "phrase_presence"
+phrases = [
+  "降本增效",
+  "提质增效",
+  "赋能业务",
+  "打造闭环",
+  "形成合力",
+  "持续优化",
+  "高质量发展",
+]
+min_occurrences = 1
+message = "这个价值表达过于泛化，容易变成口号。"
+suggestion = "改成具体对象、动作、指标和变化幅度。"
+confidence = 0.75
+
+[[rules]]
+id = "slop.zh-generic-conclusion"
+name = "中文模板化总结"
+level = "info"
+kind = "phrase_presence"
+phrases = ["综上所述", "总而言之", "总的来说", "由此可见"]
+min_occurrences = 1
+message = "模板化总结词通常没有贡献新的综合判断。"
+suggestion = "直接写结论、取舍或下一步动作。"
+confidence = 0.68
+
+[[rules]]
+id = "slop.zh-vague-scale"
+name = "中文模糊规模表达"
+level = "warning"
+kind = "phrase_density"
+phrases = ["大量", "多种", "多个", "诸多", "广泛", "海量"]
+threshold_per_1000_words = 14.0
+min_occurrences = 3
+message = "模糊规模表达较密集，但没有给出数量、范围或边界。"
+suggestion = "补充数量级、样本范围、时间窗口或适用边界。"
+confidence = 0.71
