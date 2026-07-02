@@ -295,13 +295,118 @@
   color: var(--sl-amber);
 }
 
-.sl-install pre {
+.sl-command {
+  position: relative;
   margin: 0 0 12px;
-  padding: 16px;
-  overflow-x: auto;
   border-radius: 8px;
   background: var(--sl-code);
   color: var(--sl-code-text);
+}
+
+.sl-command pre {
+  margin: 0;
+  padding: 18px 64px 18px 20px;
+  overflow-x: auto;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font-family: var(--vp-font-family-mono);
+}
+
+.sl-command code {
+  user-select: text;
+  white-space: pre;
+}
+
+.sl-copy-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 6px;
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-2);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    border-color 0.18s,
+    color 0.18s,
+    opacity 0.18s,
+    background-color 0.18s;
+}
+
+.sl-command:hover .sl-copy-button,
+.sl-copy-button:focus-visible {
+  opacity: 1;
+}
+
+.sl-copy-button:hover,
+.sl-copy-button:focus-visible {
+  border-color: var(--vp-c-brand-1);
+  color: var(--vp-c-brand-1);
+  background: var(--vp-c-bg);
+}
+
+.sl-copy-button:focus-visible {
+  outline: 2px solid var(--vp-c-brand-1);
+  outline-offset: 2px;
+}
+
+.sl-copy-icon {
+  position: relative;
+  width: 16px;
+  height: 18px;
+}
+
+.sl-copy-icon::before,
+.sl-copy-icon::after {
+  position: absolute;
+  box-sizing: border-box;
+  content: "";
+  border: 2px solid currentColor;
+  border-radius: 2px;
+}
+
+.sl-copy-icon::before {
+  right: 0;
+  bottom: 0;
+  width: 12px;
+  height: 14px;
+}
+
+.sl-copy-icon::after {
+  top: 0;
+  left: 0;
+  width: 12px;
+  height: 14px;
+  opacity: 0.7;
+}
+
+.sl-copy-text {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  padding: 4px 7px;
+  border-radius: 4px;
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-1);
+  font-family: var(--vp-font-family-base);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sl-copy-button:hover .sl-copy-text,
+.sl-copy-button:focus-visible .sl-copy-text {
+  opacity: 1;
 }
 
 .VPFooter a {
@@ -342,4 +447,7 @@
     grid-template-columns: 1fr;
   }
 
+  .sl-copy-button {
+    opacity: 1;
+  }
 }

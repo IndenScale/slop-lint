@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+
 const props = defineProps<{
   locale: 'en' | 'zh'
 }>()
@@ -30,6 +32,23 @@ const copy = {
       'Choose one install method, then attach the installed binary to your agent hooks.',
     installChoicesLabel: 'Choose one:',
     hookStepLabel: 'Then:',
+    copyLabel: 'Copy',
+    copiedLabel: 'Copied',
+    commands: [
+      {
+        id: 'release',
+        command:
+          'curl -fsSL https://raw.githubusercontent.com/IndenScale/slop-lint/main/install.sh | sh'
+      },
+      {
+        id: 'cargo',
+        command: 'cargo install slop-lint'
+      },
+      {
+        id: 'hooks',
+        command: 'slop-lint install-hooks'
+      }
+    ],
     cards: [
       {
         title: 'Local density, not mere presence',
@@ -87,6 +106,23 @@ const copy = {
     bandText: '任选一种方式安装 CLI，然后把已安装的二进制接入 Agent hook。',
     installChoicesLabel: '任选一种：',
     hookStepLabel: '然后：',
+    copyLabel: '复制',
+    copiedLabel: '已复制',
+    commands: [
+      {
+        id: 'release',
+        command:
+          'curl -fsSL https://raw.githubusercontent.com/IndenScale/slop-lint/main/install.sh | sh'
+      },
+      {
+        id: 'cargo',
+        command: 'cargo install slop-lint'
+      },
+      {
+        id: 'hooks',
+        command: 'slop-lint install-hooks'
+      }
+    ],
     cards: [
       {
         title: '控制局部密度，不是简单出现',
@@ -120,6 +156,35 @@ const copy = {
     ]
   }
 }[props.locale]
+
+const copiedCommand = ref<string | null>(null)
+let resetTimer: ReturnType<typeof setTimeout> | undefined
+
+async function copyCommand(id: string, command: string) {
+  if (navigator.clipboard) {
+    await navigator.clipboard.writeText(command)
+  } else {
+    const textarea = document.createElement('textarea')
+    textarea.value = command
+    textarea.setAttribute('readonly', 'true')
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textarea)
+  }
+
+  copiedCommand.value = id
+
+  if (resetTimer) {
+    clearTimeout(resetTimer)
+  }
+
+  resetTimer = setTimeout(() => {
+    copiedCommand.value = null
+  }, 1600)
+}
 </script>
 
 <template>
@@ -165,11 +230,59 @@ const copy = {
         </div>
         <div class="sl-install-commands">
           <div class="sl-step-label">{{ copy.installChoicesLabel }}</div>
-          <pre><code>curl -fsSL https://raw.githubusercontent.com/IndenScale/slop-lint/main/install.sh | sh</code></pre>
+          <div class="sl-command">
+            <pre><code>{{ copy.commands[0].command }}</code></pre>
+            <button
+              class="sl-copy-button"
+              type="button"
+              :aria-label="`${copy.copyLabel}: ${copy.commands[0].command}`"
+              :title="copy.copyLabel"
+              @click="copyCommand(copy.commands[0].id, copy.commands[0].command)"
+            >
+              <span class="sl-copy-icon" aria-hidden="true"></span>
+              <span class="sl-copy-text">
+                {{
+                  copiedCommand === copy.commands[0].id ? copy.copiedLabel : copy.copyLabel
+                }}
+              </span>
+            </button>
+          </div>
           <div class="sl-or">or</div>
-          <pre><code>cargo install slop-lint</code></pre>
+          <div class="sl-command">
+            <pre><code>{{ copy.commands[1].command }}</code></pre>
+            <button
+              class="sl-copy-button"
+              type="button"
+              :aria-label="`${copy.copyLabel}: ${copy.commands[1].command}`"
+              :title="copy.copyLabel"
+              @click="copyCommand(copy.commands[1].id, copy.commands[1].command)"
+            >
+              <span class="sl-copy-icon" aria-hidden="true"></span>
+              <span class="sl-copy-text">
+                {{
+                  copiedCommand === copy.commands[1].id ? copy.copiedLabel : copy.copyLabel
+                }}
+              </span>
+            </button>
+          </div>
           <div class="sl-step-label">{{ copy.hookStepLabel }}</div>
-          <pre><code>slop-lint install-hooks</code></pre>
+          <div class="sl-command">
+            <pre><code>{{ copy.commands[2].command }}</code></pre>
+            <button
+              class="sl-copy-button"
+              type="button"
+              :aria-label="`${copy.copyLabel}: ${copy.commands[2].command}`"
+              :title="copy.copyLabel"
+              @click="copyCommand(copy.commands[2].id, copy.commands[2].command)"
+            >
+              <span class="sl-copy-icon" aria-hidden="true"></span>
+              <span class="sl-copy-text">
+                {{
+                  copiedCommand === copy.commands[2].id ? copy.copiedLabel : copy.copyLabel
+                }}
+              </span>
+            </button>
+          </div>
         </div>
       </div>
     </section>

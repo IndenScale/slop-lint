@@ -1,3 +1,5 @@
+<!-- markdownlint-disable-file MD033 -->
+
 # slop-lint
 
 <p align="center">
