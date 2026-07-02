@@ -2,8 +2,28 @@
 name = "slop-lint"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.85"
 description = "Agent-facing linter for AI slop patterns in Markdown and text artifacts."
 license = "MIT"
+repository = "https://github.com/IndenScale/slop-lint"
+homepage = "https://github.com/IndenScale/slop-lint"
+documentation = "https://github.com/IndenScale/slop-lint#readme"
+readme = "README.md"
+keywords = ["ai", "lint", "markdown", "cli", "agents"]
+categories = ["command-line-utilities", "development-tools"]
+include = [
+    "src/**",
+    "rulesets/**",
+    "README.md",
+    "README_ZH.md",
+    "CHANGELOG.md",
+    "RELEASE.md",
+    "LICENSE",
+    "Cargo.toml",
+    "Cargo.lock",
+    "install.sh",
+    "install.ps1",
+]
 
 [dependencies]
 anyhow = "1.0.100"

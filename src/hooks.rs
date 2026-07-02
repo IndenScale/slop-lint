@@ -728,4 +728,93 @@ mod tests {
 
         assert_eq!(files, vec![dir.path().join("notes.md")]);
     }
+
+    #[test]
+    fn json_hook_install_is_idempotent_and_preserves_existing_hooks() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("settings.json");
+        fs::write(
+            &path,
+            serde_json::to_string_pretty(&json!({
+                "hooks": {
+                    "PostToolUse": [{
+                        "matcher": "Write",
+                        "hooks": [{
+                            "type": "command",
+                            "command": "echo existing"
+                        }]
+                    }]
+                }
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        let hook = json!({
+            "matcher": "Write|Edit",
+            "hooks": [{
+                "type": "command",
+                "command": "slop-lint hook --agent codex"
+            }]
+        });
+
+        assert!(merge_json_hook(&path, "PostToolUse", hook.clone(), false).unwrap());
+        assert!(!merge_json_hook(&path, "PostToolUse", hook, false).unwrap());
+
+        let raw = fs::read_to_string(&path).unwrap();
+        let root: serde_json::Value = serde_json::from_str(&raw).unwrap();
+        let hooks = root["hooks"]["PostToolUse"].as_array().unwrap();
+
+        assert_eq!(hooks.len(), 2);
+        assert!(
+            hooks
+                .iter()
+                .any(|entry| entry.to_string().contains("echo existing"))
+        );
+        assert!(
+            hooks
+                .iter()
+                .any(|entry| entry.to_string().contains("slop-lint hook"))
+        );
+    }
+
+    #[test]
+    fn json_hook_removal_only_removes_slop_lint_entries() {
+        let dir = tempdir().unwrap();
+        let path = dir.path().join("settings.json");
+        fs::write(
+            &path,
+            serde_json::to_string_pretty(&json!({
+                "hooks": {
+                    "PostToolUse": [
+                        {
+                            "matcher": "Write",
+                            "hooks": [{
+                                "type": "command",
+                                "command": "echo existing"
+                            }]
+                        },
+                        {
+                            "matcher": "Write|Edit",
+                            "hooks": [{
+                                "type": "command",
+                                "command": "slop-lint hook --agent codex"
+                            }]
+                        }
+                    ]
+                }
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+
+        assert!(remove_json_hook(&path, "PostToolUse").unwrap());
+        assert!(!remove_json_hook(&path, "PostToolUse").unwrap());
+
+        let raw = fs::read_to_string(&path).unwrap();
+        let root: serde_json::Value = serde_json::from_str(&raw).unwrap();
+        let hooks = root["hooks"]["PostToolUse"].as_array().unwrap();
+
+        assert_eq!(hooks.len(), 1);
+        assert!(hooks[0].to_string().contains("echo existing"));
+    }
 }

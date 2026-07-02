@@ -64,6 +64,24 @@ pub struct MuteConfig {
     pub rules: Vec<String>,
 }
 
+#[derive(Clone, Debug, Default, Deserialize)]
+struct ConfigPatch {
+    sensitivity: Option<Sensitivity>,
+    mode: Option<Mode>,
+    uncertain_action: Option<DiagnosticAction>,
+    file_extensions: Option<Vec<String>>,
+    extends: Option<Vec<String>>,
+    ruleset_paths: Option<Vec<PathBuf>>,
+    rules: Option<Vec<Rule>>,
+    mute: Option<MuteConfigPatch>,
+    custom_rules: Option<Vec<Rule>>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+struct MuteConfigPatch {
+    rules: Option<Vec<String>>,
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
@@ -101,16 +119,16 @@ impl Config {
     pub fn merge_file(&mut self, path: &Path) -> Result<()> {
         let raw = fs::read_to_string(path)
             .with_context(|| format!("failed to read config {}", path.display()))?;
-        let mut next: Config = toml::from_str(&raw)
+        let mut next: ConfigPatch = toml::from_str(&raw)
             .with_context(|| format!("failed to parse config {}", path.display()))?;
-        if let Some(parent) = path.parent() {
-            for ruleset_path in &mut next.ruleset_paths {
+        if let (Some(parent), Some(ruleset_paths)) = (path.parent(), &mut next.ruleset_paths) {
+            for ruleset_path in ruleset_paths {
                 if ruleset_path.is_relative() {
                     *ruleset_path = parent.join(&ruleset_path);
                 }
             }
         }
-        self.merge(next);
+        self.merge_patch(next);
         Ok(())
     }
 
@@ -145,18 +163,38 @@ impl Config {
         }
     }
 
-    fn merge(&mut self, next: Config) {
-        self.sensitivity = next.sensitivity;
-        self.mode = next.mode;
-        self.uncertain_action = next.uncertain_action;
-        self.file_extensions = next.file_extensions;
-        self.extends = next.extends;
-        self.ruleset_paths.extend(next.ruleset_paths);
-        self.rules.extend(next.rules);
-        self.mute.rules.extend(next.mute.rules);
+    fn merge_patch(&mut self, next: ConfigPatch) {
+        if let Some(sensitivity) = next.sensitivity {
+            self.sensitivity = sensitivity;
+        }
+        if let Some(mode) = next.mode {
+            self.mode = mode;
+        }
+        if let Some(uncertain_action) = next.uncertain_action {
+            self.uncertain_action = uncertain_action;
+        }
+        if let Some(file_extensions) = next.file_extensions {
+            self.file_extensions = file_extensions;
+        }
+        if let Some(extends) = next.extends {
+            self.extends = extends;
+        }
+        if let Some(ruleset_paths) = next.ruleset_paths {
+            self.ruleset_paths.extend(ruleset_paths);
+        }
+        if let Some(rules) = next.rules {
+            self.rules.extend(rules);
+        }
+        if let Some(mute) = next.mute
+            && let Some(rules) = mute.rules
+        {
+            self.mute.rules.extend(rules);
+        }
         self.mute.rules.sort();
         self.mute.rules.dedup();
-        self.custom_rules.extend(next.custom_rules);
+        if let Some(custom_rules) = next.custom_rules {
+            self.custom_rules.extend(custom_rules);
+        }
     }
 }
 
@@ -252,5 +290,54 @@ confidence = 1.0
 
         assert_eq!(rule.level, crate::rules::Level::Error);
         assert_eq!(rule.message, "Project-specific stricter message.");
+    }
+
+    #[test]
+    fn partial_config_does_not_reset_prior_scalar_or_list_values() {
+        let dir = tempdir().unwrap();
+        let user_config = dir.path().join("user.toml");
+        fs::write(
+            &user_config,
+            r#"
+sensitivity = "low"
+mode = "batch"
+uncertain_action = "warn"
+file_extensions = ["md"]
+extends = ["default"]
+"#,
+        )
+        .unwrap();
+        let project_config = dir.path().join(".slop-lint.toml");
+        fs::write(
+            &project_config,
+            r#"
+[mute]
+rules = ["slop.generic-conclusion"]
+"#,
+        )
+        .unwrap();
+
+        let mut config = Config::default();
+        config.merge_file(&user_config).unwrap();
+        config.merge_file(&project_config).unwrap();
+
+        assert_eq!(config.sensitivity, Sensitivity::Low);
+        assert_eq!(config.mode, Mode::Batch);
+        assert_eq!(config.uncertain_action, DiagnosticAction::Warn);
+        assert_eq!(config.file_extensions, vec!["md"]);
+        assert_eq!(config.extends, vec!["default"]);
+        assert_eq!(config.mute.rules, vec!["slop.generic-conclusion"]);
+    }
+
+    #[test]
+    fn explicit_empty_extends_replaces_defaults() {
+        let dir = tempdir().unwrap();
+        let config_path = dir.path().join(".slop-lint.toml");
+        fs::write(&config_path, "extends = []\n").unwrap();
+
+        let mut config = Config::default();
+        config.merge_file(&config_path).unwrap();
+
+        assert!(config.extends.is_empty());
     }
 }

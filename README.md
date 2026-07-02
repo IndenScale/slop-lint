@@ -22,6 +22,12 @@ Install one binary on Windows PowerShell:
 iwr https://raw.githubusercontent.com/IndenScale/slop-lint/main/install.ps1 -useb | iex
 ```
 
+Or install from crates.io:
+
+```sh
+cargo install slop-lint
+```
+
 Attach it to your agent hooks:
 
 ```sh
@@ -88,11 +94,22 @@ Recommended agent behavior:
 ```sh
 slop-lint check README.md
 slop-lint check docs/ --format json
+slop-lint check docs/ --format sarif --fail-on-warning > slop-lint.sarif
 slop-lint init
 ```
 
 By default, `slop-lint check` scans Markdown and text-like files under the
 current directory.
+
+Output formats:
+
+```sh
+slop-lint check docs/ --format text
+slop-lint check docs/ --format json
+slop-lint check docs/ --format sarif
+```
+
+Use SARIF when wiring `slop-lint` into CI, code scanning, or editor diagnostics.
 
 ## Product stance
 
@@ -145,6 +162,20 @@ suggestion = "Replace the superlative with a concrete property, benchmark, or pr
 confidence = 0.7
 ```
 
+Inline disables:
+
+```md
+<!-- slop-lint-disable-next-line slop.generic-conclusion -->
+In conclusion, this sentence is intentionally formulaic.
+
+This phrase is intentional. <!-- slop-lint-disable-line -->
+
+<!-- slop-lint-disable-file slop.zh-generic-value -->
+```
+
+Prefer project-level `[mute].rules` when a whole project wants a style, and
+inline disables when a single line or file has a local exception.
+
 ## Rule model
 
 Rules are data-driven TOML, including the built-in rules. The Rust binary keeps
@@ -170,10 +201,14 @@ CI runs formatting, Clippy, and tests on pushes and pull requests. Tagged
 releases build the install-script assets with GitHub Actions and publish
 `SHA256SUMS` alongside the archives.
 
+The install scripts verify downloaded archives against release checksums before
+installing the binary.
+
+The crate is also prepared for crates.io publication. See `RELEASE.md` for the
+tag, GitHub Release, and crates.io release flow.
+
 ## Roadmap
 
 - External rule packs for academic writing, technical docs, social posts, and brand voice.
 - Diff-only mode for PostToolUse hooks.
-- SARIF output for editor and CI integrations.
-- Inline disable comments.
 - Data-only plugin packages first, WASM plugins later if rule logic needs code.

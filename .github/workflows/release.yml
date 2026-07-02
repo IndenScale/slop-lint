@@ -50,6 +50,9 @@ jobs:
       - name: Run host tests
         run: cargo test
 
+      - name: Check package metadata
+        run: cargo package --no-verify
+
       - name: Build
         env:
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: ${{ matrix.linker }}

@@ -21,8 +21,10 @@ $asset = "slop-lint-$target.zip"
 
 if ($Version -eq "latest") {
     $url = "https://github.com/$Repo/releases/latest/download/$asset"
+    $sumsUrl = "https://github.com/$Repo/releases/latest/download/SHA256SUMS"
 } else {
     $url = "https://github.com/$Repo/releases/download/$Version/$asset"
+    $sumsUrl = "https://github.com/$Repo/releases/download/$Version/SHA256SUMS"
 }
 
 $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("slop-lint-" + [System.Guid]::NewGuid())
@@ -33,6 +35,17 @@ try {
     $archive = Join-Path $tmp $asset
     Write-Host "slop-lint: downloading $url"
     Invoke-WebRequest -Uri $url -OutFile $archive
+    $sums = Join-Path $tmp "SHA256SUMS"
+    Invoke-WebRequest -Uri $sumsUrl -OutFile $sums
+    $expectedLine = Get-Content $sums | Where-Object { $_ -match "\s$([regex]::Escape($asset))$" } | Select-Object -First 1
+    if (!$expectedLine) {
+        throw "slop-lint: SHA256SUMS did not contain $asset"
+    }
+    $expectedHash = ($expectedLine -split "\s+")[0].ToUpperInvariant()
+    $actualHash = (Get-FileHash -Algorithm SHA256 -Path $archive).Hash.ToUpperInvariant()
+    if ($actualHash -ne $expectedHash) {
+        throw "slop-lint: checksum mismatch for $asset"
+    }
     Expand-Archive -Path $archive -DestinationPath $tmp -Force
 
     $exe = Join-Path $tmp "slop-lint.exe"

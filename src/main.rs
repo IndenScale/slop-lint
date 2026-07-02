@@ -3,12 +3,14 @@ mod config;
 mod hooks;
 mod rules;
 
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 use clap::{Parser, Subcommand, ValueEnum};
 use serde::Serialize;
+use serde_json::json;
 use walkdir::WalkDir;
 
 use crate::analyze::{Diagnostic, analyze_text};
@@ -99,6 +101,7 @@ struct CheckArgs {
 enum OutputFormat {
     Text,
     Json,
+    Sarif,
 }
 
 #[derive(Debug, Serialize)]
@@ -170,6 +173,9 @@ fn run_check(args: CheckArgs) -> Result<()> {
     match args.format {
         OutputFormat::Text => print_text_report(&report),
         OutputFormat::Json => println!("{}", serde_json::to_string_pretty(&report)?),
+        OutputFormat::Sarif => {
+            println!("{}", serde_json::to_string_pretty(&sarif_report(&report))?)
+        }
     }
 
     if args.fail_on_warning && report.summary.diagnostic_count > 0 {
@@ -252,6 +258,80 @@ fn print_text_report(report: &CheckReport) {
     }
 }
 
+fn sarif_report(report: &CheckReport) -> serde_json::Value {
+    let mut rules_by_id: BTreeMap<&str, &Diagnostic> = BTreeMap::new();
+    for diagnostic in &report.diagnostics {
+        rules_by_id.entry(&diagnostic.rule_id).or_insert(diagnostic);
+    }
+    let rules = rules_by_id
+        .into_iter()
+        .map(|(rule_id, diagnostic)| {
+            json!({
+                "id": rule_id,
+                "name": rule_id,
+                "shortDescription": {
+                    "text": diagnostic.message
+                },
+                "help": {
+                    "text": diagnostic.suggestion.as_deref().unwrap_or(&diagnostic.message)
+                }
+            })
+        })
+        .collect::<Vec<_>>();
+    let results = report
+        .diagnostics
+        .iter()
+        .map(|diagnostic| {
+            json!({
+                "ruleId": diagnostic.rule_id,
+                "level": sarif_level(&diagnostic.level),
+                "message": {
+                    "text": diagnostic.message
+                },
+                "locations": [{
+                    "physicalLocation": {
+                        "artifactLocation": {
+                            "uri": diagnostic.path.to_string_lossy()
+                        },
+                        "region": {
+                            "startLine": diagnostic.line,
+                            "startColumn": diagnostic.column
+                        }
+                    }
+                }],
+                "properties": {
+                    "action": diagnostic.action,
+                    "confidence": diagnostic.confidence,
+                    "matched": diagnostic.matched
+                }
+            })
+        })
+        .collect::<Vec<_>>();
+
+    json!({
+        "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+        "version": "2.1.0",
+        "runs": [{
+            "tool": {
+                "driver": {
+                    "name": "slop-lint",
+                    "informationUri": "https://github.com/IndenScale/slop-lint",
+                    "rules": rules
+                }
+            },
+            "results": results
+        }]
+    })
+}
+
+fn sarif_level(level: &crate::rules::Level) -> &'static str {
+    match level {
+        crate::rules::Level::Error => "error",
+        crate::rules::Level::Warning => "warning",
+        crate::rules::Level::Info => "note",
+    }
+}
+
 fn run_init(path: &Path) -> Result<()> {
     if path.exists() {
         bail!("config already exists: {}", path.display());
@@ -295,4 +375,49 @@ Recommended Agent behavior:
 - If hook feedback says ask_user, ask whether to revise or mute the rule in .slop-lint.toml.
 - If the user chooses mute, add the rule id to [mute].rules with a short comment.
 "#
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use super::*;
+    use crate::rules::Level;
+
+    #[test]
+    fn sarif_report_contains_rule_location_and_properties() {
+        let report = CheckReport {
+            diagnostics: vec![Diagnostic {
+                path: PathBuf::from("docs/demo.md"),
+                line: 3,
+                column: 12,
+                level: Level::Warning,
+                rule_id: "slop.demo".into(),
+                message: "Demo warning.".into(),
+                suggestion: Some("Rewrite it.".into()),
+                action: "warn".into(),
+                confidence: 0.9,
+                matched: vec!["demo".into()],
+            }],
+            summary: CheckSummary {
+                files_checked: 1,
+                diagnostic_count: 1,
+            },
+        };
+
+        let sarif = sarif_report(&report);
+        let result = &sarif["runs"][0]["results"][0];
+
+        assert_eq!(result["ruleId"], "slop.demo");
+        assert_eq!(result["level"], "warning");
+        assert_eq!(
+            result["locations"][0]["physicalLocation"]["artifactLocation"]["uri"],
+            "docs/demo.md"
+        );
+        assert_eq!(
+            result["locations"][0]["physicalLocation"]["region"]["startLine"],
+            3
+        );
+        assert_eq!(result["properties"]["action"], "warn");
+    }
 }

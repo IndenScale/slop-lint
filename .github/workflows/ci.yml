@@ -21,3 +21,6 @@ jobs:
 
       - name: Run tests
         run: cargo test
+
+      - name: Check package
+        run: cargo package --no-verify

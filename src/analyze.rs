@@ -1,3 +1,4 @@
+use std::collections::{BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 
 use regex::Regex;
@@ -28,15 +29,34 @@ struct Unit<'a> {
     scope: UnitScope,
 }
 
+#[derive(Clone, Debug)]
+struct PhraseMatch {
+    phrase: String,
+    start: usize,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum UnitScope {
     Document,
     Paragraph,
 }
 
+#[derive(Debug, Default)]
+struct DisableDirectives {
+    file: DisableSet,
+    lines: HashMap<usize, DisableSet>,
+}
+
+#[derive(Debug, Default)]
+struct DisableSet {
+    all: bool,
+    rules: BTreeSet<String>,
+}
+
 pub fn analyze_text(path: &Path, text: &str, config: &Config, rules: &[Rule]) -> Vec<Diagnostic> {
     let mut diagnostics = Vec::new();
     let units = segment_units(text);
+    let disable_directives = DisableDirectives::parse(text);
     for rule in rules {
         match rule.kind {
             RuleKind::PhrasePresence => {
@@ -46,14 +66,11 @@ pub fn analyze_text(path: &Path, text: &str, config: &Config, rules: &[Rule]) ->
                     }
                     let matches = find_phrases(unit.text, &rule.phrases);
                     if matches.len() >= rule.min_occurrences.unwrap_or(1) {
-                        diagnostics.push(to_diagnostic(
-                            path,
-                            text,
-                            unit.offset,
-                            rule,
-                            matches,
-                            config,
-                        ));
+                        let diagnostic =
+                            to_diagnostic(path, text, unit.offset, rule, &matches, config);
+                        if !disable_directives.is_disabled(&diagnostic.rule_id, diagnostic.line) {
+                            diagnostics.push(diagnostic);
+                        }
                     }
                 }
             }
@@ -68,14 +85,11 @@ pub fn analyze_text(path: &Path, text: &str, config: &Config, rules: &[Rule]) ->
                         * config.threshold_multiplier();
                     let min_occurrences = rule.min_occurrences.unwrap_or(1);
                     if matches.len() >= min_occurrences && density >= threshold {
-                        diagnostics.push(to_diagnostic(
-                            path,
-                            text,
-                            unit.offset,
-                            rule,
-                            matches,
-                            config,
-                        ));
+                        let diagnostic =
+                            to_diagnostic(path, text, unit.offset, rule, &matches, config);
+                        if !disable_directives.is_disabled(&diagnostic.rule_id, diagnostic.line) {
+                            diagnostics.push(diagnostic);
+                        }
                     }
                 }
             }
@@ -97,15 +111,88 @@ pub fn analyze_text(path: &Path, text: &str, config: &Config, rules: &[Rule]) ->
     diagnostics
 }
 
+impl DisableDirectives {
+    fn parse(text: &str) -> Self {
+        let mut directives = Self::default();
+        for (index, line) in text.lines().enumerate() {
+            let line_number = index + 1;
+            if line.contains("slop-lint-disable-file") {
+                directives
+                    .file
+                    .add_rules(parse_disable_rules(line, "slop-lint-disable-file"));
+            } else if line.contains("slop-lint-disable-next-line") {
+                directives
+                    .lines
+                    .entry(line_number + 1)
+                    .or_default()
+                    .add_rules(parse_disable_rules(line, "slop-lint-disable-next-line"));
+            } else if line.contains("slop-lint-disable-line") {
+                directives
+                    .lines
+                    .entry(line_number)
+                    .or_default()
+                    .add_rules(parse_disable_rules(line, "slop-lint-disable-line"));
+            } else if line.contains("slop-lint-disable") {
+                directives
+                    .file
+                    .add_rules(parse_disable_rules(line, "slop-lint-disable"));
+            }
+        }
+        directives
+    }
+
+    fn is_disabled(&self, rule_id: &str, line: usize) -> bool {
+        self.file.matches(rule_id)
+            || self
+                .lines
+                .get(&line)
+                .map(|rules| rules.matches(rule_id))
+                .unwrap_or(false)
+    }
+}
+
+impl DisableSet {
+    fn add_rules(&mut self, rules: Vec<String>) {
+        if rules.is_empty() {
+            self.all = true;
+        } else {
+            self.rules.extend(rules);
+        }
+    }
+
+    fn matches(&self, rule_id: &str) -> bool {
+        self.all || self.rules.contains(rule_id)
+    }
+}
+
+fn parse_disable_rules(line: &str, marker: &str) -> Vec<String> {
+    let Some(after_marker) = line.split_once(marker).map(|(_, after)| after) else {
+        return Vec::new();
+    };
+    after_marker
+        .split(|ch: char| ch.is_whitespace() || ch == ',' || ch == ';')
+        .map(|part| part.trim_matches(|ch| ch == '-' || ch == '>'))
+        .map(str::trim)
+        .filter(|part| !part.is_empty())
+        .filter(|part| *part != "*/")
+        .map(ToOwned::to_owned)
+        .collect()
+}
+
 fn to_diagnostic(
     path: &Path,
     full_text: &str,
-    offset: usize,
+    unit_offset: usize,
     rule: &Rule,
-    matched: Vec<String>,
+    matches: &[PhraseMatch],
     config: &Config,
 ) -> Diagnostic {
-    let (line, column) = line_column(full_text, offset);
+    let match_offset = matches
+        .iter()
+        .map(|phrase_match| unit_offset + phrase_match.start)
+        .min()
+        .unwrap_or(unit_offset);
+    let (line, column) = line_column(full_text, match_offset);
     Diagnostic {
         path: path.to_path_buf(),
         line,
@@ -116,7 +203,10 @@ fn to_diagnostic(
         suggestion: rule.suggestion.clone(),
         action: config.diagnostic_action(rule.confidence).to_string(),
         confidence: rule.confidence,
-        matched,
+        matched: matches
+            .iter()
+            .map(|phrase_match| phrase_match.phrase.clone())
+            .collect(),
     }
 }
 
@@ -160,20 +250,23 @@ fn segment_units(text: &str) -> Vec<Unit<'_>> {
     units
 }
 
-fn find_phrases(text: &str, phrases: &[String]) -> Vec<String> {
-    let lower = text.to_lowercase();
+fn find_phrases(text: &str, phrases: &[String]) -> Vec<PhraseMatch> {
     let mut matches = Vec::new();
     for phrase in phrases {
-        let escaped = regex::escape(&phrase.to_lowercase());
+        let escaped = regex::escape(phrase);
         let phrase_pattern = escaped.replace(r"\ ", r"\s+");
-        let pattern = if phrase.chars().any(|ch| ch.is_ascii_alphabetic()) {
+        let body = if phrase.chars().any(|ch| ch.is_ascii_alphabetic()) {
             format!(r"\b{}\b", phrase_pattern)
         } else {
             phrase_pattern
         };
+        let pattern = format!("(?i:{body})");
         if let Ok(regex) = Regex::new(&pattern) {
-            for _ in regex.find_iter(&lower) {
-                matches.push(phrase.clone());
+            for regex_match in regex.find_iter(text) {
+                matches.push(PhraseMatch {
+                    phrase: phrase.clone(),
+                    start: regex_match.start(),
+                });
             }
         }
     }
@@ -281,6 +374,23 @@ mod tests {
     }
 
     #[test]
+    fn reports_location_at_matched_phrase_not_paragraph_start() {
+        let diagnostics = analyze_text(
+            Path::new("demo.md"),
+            "Concrete setup first.\n\nThis paragraph eventually says it is important to note the risk.",
+            &Config::default(),
+            &builtin_rules().unwrap(),
+        );
+        let diagnostic = diagnostics
+            .iter()
+            .find(|diagnostic| diagnostic.rule_id == "slop.overconfident-transition")
+            .unwrap();
+
+        assert_eq!(diagnostic.line, 3);
+        assert_eq!(diagnostic.column, 32);
+    }
+
+    #[test]
     fn low_confidence_rules_ask_in_interactive_mode() {
         let diagnostics = analyze_text(
             Path::new("demo.md"),
@@ -304,6 +414,50 @@ mod tests {
             &builtin_rules().unwrap(),
         );
         assert!(diagnostics.is_empty());
+    }
+
+    #[test]
+    fn supports_rule_specific_disable_next_line() {
+        let diagnostics = analyze_text(
+            Path::new("demo.md"),
+            "<!-- slop-lint-disable-next-line slop.overconfident-transition -->\nIt is important to note this.",
+            &Config::default(),
+            &builtin_rules().unwrap(),
+        );
+
+        assert!(
+            !diagnostics
+                .iter()
+                .any(|diagnostic| diagnostic.rule_id == "slop.overconfident-transition")
+        );
+    }
+
+    #[test]
+    fn supports_disable_line_for_all_rules() {
+        let diagnostics = analyze_text(
+            Path::new("demo.md"),
+            "It is important to note this. <!-- slop-lint-disable-line -->",
+            &Config::default(),
+            &builtin_rules().unwrap(),
+        );
+
+        assert!(diagnostics.is_empty());
+    }
+
+    #[test]
+    fn supports_disable_file_for_specific_rule() {
+        let diagnostics = analyze_text(
+            Path::new("demo.md"),
+            "<!-- slop-lint-disable-file slop.overconfident-transition -->\nIt is important to note this.",
+            &Config::default(),
+            &builtin_rules().unwrap(),
+        );
+
+        assert!(
+            !diagnostics
+                .iter()
+                .any(|diagnostic| diagnostic.rule_id == "slop.overconfident-transition")
+        );
     }
 
     #[test]

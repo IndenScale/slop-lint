@@ -21,6 +21,12 @@ Windows PowerShell 一个命令安装全局二进制：
 iwr https://raw.githubusercontent.com/IndenScale/slop-lint/main/install.ps1 -useb | iex
 ```
 
+也可以从 crates.io 安装：
+
+```sh
+cargo install slop-lint
+```
+
 一个命令接入 Agent Hooks：
 
 ```sh
@@ -87,10 +93,21 @@ slop-lint hook --agent <agent>
 ```sh
 slop-lint check README.md
 slop-lint check docs/ --format json
+slop-lint check docs/ --format sarif --fail-on-warning > slop-lint.sarif
 slop-lint init
 ```
 
 默认情况下，`slop-lint check` 会扫描当前目录下的 Markdown 和文本类文件。
+
+输出格式：
+
+```sh
+slop-lint check docs/ --format text
+slop-lint check docs/ --format json
+slop-lint check docs/ --format sarif
+```
+
+接入 CI、代码扫描或编辑器诊断时，优先使用 SARIF。
 
 ## 产品立场
 
@@ -141,6 +158,20 @@ suggestion = "Replace the superlative with a concrete property, benchmark, or pr
 confidence = 0.7
 ```
 
+行内 disable：
+
+```md
+<!-- slop-lint-disable-next-line slop.generic-conclusion -->
+In conclusion, this sentence is intentionally formulaic.
+
+This phrase is intentional. <!-- slop-lint-disable-line -->
+
+<!-- slop-lint-disable-file slop.zh-generic-value -->
+```
+
+如果整个项目都接受某种风格，优先用项目级 `[mute].rules`；如果只是单行或单文件例外，
+使用行内 disable。
+
 ## 规则模型
 
 规则是 TOML 数据驱动的，包括内置规则。Rust 二进制只保留 schema 和加载逻辑；
@@ -162,11 +193,14 @@ confidence = 0.7
 CI 会在 push 和 pull request 上运行格式检查、Clippy 和测试。带 tag 的 release 会
 通过 GitHub Actions 构建安装脚本所需资产，并随归档文件发布 `SHA256SUMS`。
 
+安装脚本会在安装前用 release 中的 `SHA256SUMS` 校验下载归档。
+
+crate 也已经按 crates.io 发布要求准备。tag、GitHub Release 和 crates.io 发布流程见
+`RELEASE.md`。
+
 ## 路线图
 
 - 针对学术写作、技术文档、社交媒体、品牌语气的外部规则包。
 - 面向 PostToolUse Hook 的 diff-only 模式。
-- SARIF 输出，用于编辑器和 CI 集成。
-- 行内 disable 注释。
 - 第一阶段优先支持 data-only 插件包；只有当规则逻辑确实需要代码时，再考虑 WASM
   插件。
